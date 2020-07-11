@@ -7,14 +7,14 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SpectreBodies", "SpectreBod
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
-		Debug|Any CPU = Debug|Any CPU
-		Release|Any CPU = Release|Any CPU
+		Debug|x64 = Debug|x64
+		Release|x64 = Release|x64
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{C1B13FD4-C3A3-AAAA-818F-497FE34C362F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{C1B13FD4-C3A3-AAAA-818F-497FE34C362F}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{C1B13FD4-C3A3-AAAA-818F-497FE34C362F}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{C1B13FD4-C3A3-AAAA-818F-497FE34C362F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C1B13FD4-C3A3-AAAA-818F-497FE34C362F}.Debug|x64.ActiveCfg = Debug|x64
+		{C1B13FD4-C3A3-AAAA-818F-497FE34C362F}.Debug|x64.Build.0 = Debug|x64
+		{C1B13FD4-C3A3-AAAA-818F-497FE34C362F}.Release|x64.ActiveCfg = Release|x64
+		{C1B13FD4-C3A3-AAAA-818F-497FE34C362F}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

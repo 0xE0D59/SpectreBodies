@@ -25,9 +25,16 @@ namespace SpectreBodies
 
         public override bool Initialise()
         {
+            EnsureFileCoherence();
             LoadBodyList();
             Input.RegisterKey(Settings.ReloadListKey);
             return base.Initialise();
+        }
+
+        private void EnsureFileCoherence()
+        {
+            if (!File.Exists(BodyListPath))
+                File.WriteAllText(BodyListPath, Helpers.FileContent.SpectreBodyList);
         }
 
         public override void EntityAdded(Entity entity)
@@ -53,7 +60,9 @@ namespace SpectreBodies
                 LoadBodyList();
                 return;
             }
-            if (!GameController.InGame || GameController.Area.CurrentArea.IsTown || nearbyMonsters == null || nearbyMonsters.IsEmpty)
+
+            if (!GameController.InGame || GameController.Area.CurrentArea.IsTown || nearbyMonsters == null ||
+                nearbyMonsters.IsEmpty)
                 return;
 
             var textColor = Settings.TextColor.Value;
@@ -62,7 +71,7 @@ namespace SpectreBodies
             var useRenderNames = Settings.UseRenderNames.Value;
             var textSize = Settings.TextSize.Value;
             var drawDistance = Settings.DrawDistance.Value;
-            
+
             foreach (var monster in nearbyMonsters.Keys)
             {
                 var entity = monster?.AsObject<Entity>();
@@ -84,11 +93,13 @@ namespace SpectreBodies
                     var iconRect = new Vector2(chestScreenCoords.X, chestScreenCoords.Y);
                     float maxWidth = 0;
                     float maxheight = 0;
-                    var size = Graphics.DrawText(GetDisplayName(entity, useRenderNames), iconRect, textColor, textSize, FontAlign.Center);
+                    var size = Graphics.DrawText(GetDisplayName(entity, useRenderNames), iconRect, textColor, textSize,
+                        FontAlign.Center);
                     chestScreenCoords.Y += size.Y;
                     maxheight += size.Y;
                     maxWidth = Math.Max(maxWidth, size.X);
-                    var background = new RectangleF(chestScreenCoords.X - maxWidth / 2 - 3, chestScreenCoords.Y - maxheight, maxWidth + 6, maxheight);
+                    var background = new RectangleF(chestScreenCoords.X - maxWidth / 2 - 3,
+                        chestScreenCoords.Y - maxheight, maxWidth + 6, maxheight);
                     Graphics.DrawBox(background, backgroundColor);
                 }
             }
