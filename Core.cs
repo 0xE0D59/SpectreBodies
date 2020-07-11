@@ -125,7 +125,8 @@ namespace SpectreBodies
             if (string.IsNullOrWhiteSpace(metaData))
                 return false;
 
-            return validSpectreBodies.Any(s => !string.IsNullOrWhiteSpace(s) && metaData.Contains(s));
+            return validSpectreBodies.Any(s =>
+                !string.IsNullOrWhiteSpace(s) && metaData.IndexOf(s, StringComparison.OrdinalIgnoreCase) > 0);
         }
 
         private void LoadBodyList()
