@@ -20,7 +20,7 @@ namespace SpectreBodies
 
         private string BodyListPath => DirectoryFullName + Path.DirectorySeparatorChar + BodyListFileName;
         private DateTime lastBodyListLoadTime = new DateTime();
-        private ConcurrentDictionary<Monster, byte> nearbyMonsters = new ConcurrentDictionary<Monster, byte>();
+        private Dictionary<long, Monster> nearbyMonsters = new Dictionary<long, Monster>();
         private ICollection<string> validSpectreBodies = new List<string>();
 
         public override bool Initialise()
@@ -40,13 +40,27 @@ namespace SpectreBodies
         public override void EntityAdded(Entity entity)
         {
             if (entity.Type == EntityType.Monster)
-                nearbyMonsters.TryAdd(entity.AsObject<Monster>(), 0);
+            {
+                var monster = entity.AsObject<Monster>();
+                if (monster != null && monster.Address != 0x0 && !nearbyMonsters.ContainsKey(monster.Address))
+                    nearbyMonsters.Add(monster.Address, monster);
+            }
         }
 
         public override void EntityRemoved(Entity entity)
         {
             if (entity.Type == EntityType.Monster)
-                nearbyMonsters.TryRemove(entity.AsObject<Monster>(), out _);
+            {
+                var monster = entity.AsObject<Monster>();
+                if (monster != null && monster.Address != 0x0)
+                    nearbyMonsters.Remove(monster.Address);
+            }
+        }
+
+        public override void AreaChange(AreaInstance area)
+        {
+            base.AreaChange(area);
+            nearbyMonsters.Clear();
         }
 
         public override void Render()
@@ -62,7 +76,7 @@ namespace SpectreBodies
             }
 
             if (!GameController.InGame || GameController.Area.CurrentArea.IsTown || nearbyMonsters == null ||
-                nearbyMonsters.IsEmpty)
+                nearbyMonsters.Count == 0)
                 return;
 
             var textColor = Settings.TextColor.Value;
@@ -72,13 +86,18 @@ namespace SpectreBodies
             var textSize = Settings.TextSize.Value;
             var drawDistance = Settings.DrawDistance.Value;
 
-            foreach (var monster in nearbyMonsters.Keys)
+            foreach (var monster in nearbyMonsters.Values)
             {
                 var entity = monster?.AsObject<Entity>();
-                if (entity == null)
+                if (entity == null || entity.Address == 0x0 || string.IsNullOrEmpty(entity.Metadata) ||
+                    !entity.IsValid || !entity.IsHostile)
                     continue;
-                if (string.IsNullOrEmpty(entity.Metadata) || !entity.IsValid || !entity.IsDead || !entity.IsHostile)
-                    continue;
+                if (entity.HasComponent<Life>())
+                {
+                    var entityLife = entity.GetComponent<Life>();
+                    if (entityLife != null && entityLife.Address != 0x0 && entityLife.CurHP > 0)
+                        continue;
+                }
 
                 if (Vector3.Distance(entity.Pos, GameController.Player.Pos) > drawDistance)
                     continue;
