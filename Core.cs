@@ -28,6 +28,7 @@ namespace SpectreBodies
             EnsureFileCoherence();
             LoadBodyList();
             Input.RegisterKey(Settings.ReloadListKey);
+            Settings.ReloadListKey.OnValueChanged += () => Input.RegisterKey(Settings.ReloadListKey);
             return base.Initialise();
         }
 
