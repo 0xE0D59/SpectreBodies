@@ -146,7 +146,7 @@ namespace SpectreBodies
                 return false;
 
             return validSpectreBodies.Any(s =>
-                !string.IsNullOrWhiteSpace(s) && metaData.IndexOf(s, StringComparison.OrdinalIgnoreCase) > 0);
+                !string.IsNullOrWhiteSpace(s) && metaData.IndexOf(s, StringComparison.OrdinalIgnoreCase) >= 0);
         }
 
         private void LoadBodyList()
