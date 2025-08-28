@@ -2,7 +2,7 @@
 using ExileCore.Shared.Attributes;
 using ExileCore.Shared.Interfaces;
 using ExileCore.Shared.Nodes;
-using SharpDX;
+using Color = SharpDX.Color;
 
 namespace SpectreBodies
 {
@@ -11,8 +11,8 @@ namespace SpectreBodies
         public Settings()
         {
             ReloadListKey = new HotkeyNode(Keys.F6);
-            TextColor = new ColorBGRA(255, 255, 255, 255);
-            BackgroundColor = new ColorBGRA(0, 0, 0, 255);
+            TextColor = new ColorNode(Color.White);
+            BackgroundColor = new ColorNode(Color.Black);
             TextOffset = new RangeNode<int>(120, -360, 360);
             TextSize = new RangeNode<int>(16, 1, 200);
             DrawDistance = new RangeNode<int>(600, 0, 2000);

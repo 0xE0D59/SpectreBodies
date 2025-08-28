@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -10,6 +9,8 @@ using ExileCore.PoEMemory.MemoryObjects;
 using ExileCore.Shared.Enums;
 using ExileCore.Shared.Helpers;
 using SharpDX;
+using Vector2 = System.Numerics.Vector2;
+using Vector3 = System.Numerics.Vector3;
 
 namespace SpectreBodies
 {
@@ -19,9 +20,9 @@ namespace SpectreBodies
         private const string MetaDataPattern = @"(\w+/)*\w+";
 
         private string BodyListPath => DirectoryFullName + Path.DirectorySeparatorChar + BodyListFileName;
-        private DateTime lastBodyListLoadTime = new DateTime();
-        private Dictionary<long, Monster> nearbyMonsters = new Dictionary<long, Monster>();
-        private ICollection<string> validSpectreBodies = new List<string>();
+        private DateTime _lastBodyListLoadTime;
+        private Dictionary<long, Monster> _nearbyMonsters = new();
+        private ICollection<string> _validSpectreBodies = new List<string>();
 
         public override bool Initialise()
         {
@@ -43,8 +44,8 @@ namespace SpectreBodies
             if (entity.Type == EntityType.Monster)
             {
                 var monster = entity.AsObject<Monster>();
-                if (monster != null && monster.Address != 0x0 && !nearbyMonsters.ContainsKey(monster.Address))
-                    nearbyMonsters.Add(monster.Address, monster);
+                if (monster != null && monster.Address != 0x0 && !_nearbyMonsters.ContainsKey(monster.Address))
+                    _nearbyMonsters.Add(monster.Address, monster);
             }
         }
 
@@ -54,14 +55,14 @@ namespace SpectreBodies
             {
                 var monster = entity.AsObject<Monster>();
                 if (monster != null && monster.Address != 0x0)
-                    nearbyMonsters.Remove(monster.Address);
+                    _nearbyMonsters.Remove(monster.Address);
             }
         }
 
         public override void AreaChange(AreaInstance area)
         {
             base.AreaChange(area);
-            nearbyMonsters.Clear();
+            _nearbyMonsters.Clear();
         }
 
         public override void Render()
@@ -69,25 +70,24 @@ namespace SpectreBodies
             base.Render();
 
             if (Input.IsKeyDown(Settings.ReloadListKey.Value) &&
-                (DateTime.Now - lastBodyListLoadTime).TotalMilliseconds > 500)
+                (DateTime.Now - _lastBodyListLoadTime).TotalMilliseconds > 500)
             {
-                lastBodyListLoadTime = DateTime.Now;
+                _lastBodyListLoadTime = DateTime.Now;
                 LoadBodyList();
                 return;
             }
 
-            if (!GameController.InGame || GameController.Area.CurrentArea.IsTown || nearbyMonsters == null ||
-                nearbyMonsters.Count == 0)
+            if (!GameController.InGame || GameController.Area.CurrentArea.IsTown || _nearbyMonsters == null ||
+                _nearbyMonsters.Count == 0)
                 return;
 
             var textColor = Settings.TextColor.Value;
             var backgroundColor = Settings.BackgroundColor.Value;
             var zOffset = Settings.TextOffset.Value;
             var useRenderNames = Settings.UseRenderNames.Value;
-            var textSize = Settings.TextSize.Value;
             var drawDistance = Settings.DrawDistance.Value;
 
-            foreach (var monster in nearbyMonsters.Values)
+            foreach (var monster in _nearbyMonsters.Values)
             {
                 var entity = monster?.AsObject<Entity>();
                 if (entity == null || entity.Address == 0x0 || string.IsNullOrEmpty(entity.Metadata) ||
@@ -100,20 +100,21 @@ namespace SpectreBodies
                         continue;
                 }
 
-                if (Vector3.Distance(entity.Pos, GameController.Player.Pos) > drawDistance)
+                if (Vector3.Distance(entity.PosNum, GameController.Player.PosNum) > drawDistance)
                     continue;
 
                 if (IsSpectreBody(entity.Metadata))
                 {
                     var camera = GameController.Game.IngameState.Camera;
-                    var chestScreenCoords = camera.WorldToScreen(entity.Pos.Translate(0, 0, zOffset));
+                    var chestScreenCoords = camera.WorldToScreen(entity.PosNum.Translate(0, 0, zOffset));
                     if (chestScreenCoords == new Vector2())
                         continue;
 
                     var iconRect = new Vector2(chestScreenCoords.X, chestScreenCoords.Y);
                     float maxWidth = 0;
                     float maxheight = 0;
-                    var size = Graphics.DrawText(GetDisplayName(entity, useRenderNames), iconRect, textColor, textSize,
+                    var displayName = GetDisplayName(entity, useRenderNames);
+                    var size = Graphics.DrawText(displayName, iconRect, textColor,
                         FontAlign.Center);
                     chestScreenCoords.Y += size.Y;
                     maxheight += size.Y;
@@ -145,7 +146,7 @@ namespace SpectreBodies
             if (string.IsNullOrWhiteSpace(metaData))
                 return false;
 
-            return validSpectreBodies.Any(s =>
+            return _validSpectreBodies.Any(s =>
                 !string.IsNullOrWhiteSpace(s) && metaData.IndexOf(s, StringComparison.OrdinalIgnoreCase) >= 0);
         }
 
@@ -160,16 +161,14 @@ namespace SpectreBodies
             var bodyList = new List<string>();
             try
             {
-                using (StreamReader sr = new StreamReader(BodyListPath))
+                using StreamReader sr = new StreamReader(BodyListPath);
+                string line;
+                while ((line = sr.ReadLine()) != null)
                 {
-                    string line = null;
-                    while ((line = sr.ReadLine()) != null)
-                    {
-                        if (line.Length == 0 || line.StartsWith("#") || line.StartsWith("//"))
-                            continue;
-                        if (Regex.IsMatch(line, MetaDataPattern, RegexOptions.IgnoreCase))
-                            bodyList.Add(line);
-                    }
+                    if (line.Length == 0 || line.StartsWith("#") || line.StartsWith("//"))
+                        continue;
+                    if (Regex.IsMatch(line, MetaDataPattern, RegexOptions.IgnoreCase))
+                        bodyList.Add(line);
                 }
             }
             catch (FileNotFoundException ex)
@@ -180,7 +179,7 @@ namespace SpectreBodies
             }
 
             bodyList.Sort();
-            validSpectreBodies = bodyList;
+            _validSpectreBodies = bodyList;
 
             LogMessage($"Loaded {bodyList.Count} spectre bodies from: {BodyListPath}", 2F);
         }
